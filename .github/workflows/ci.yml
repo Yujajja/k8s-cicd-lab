@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -40,3 +40,14 @@ jobs:
           tags: |
             ghcr.io/yujajja/simple-web:latest
             ghcr.io/yujajja/simple-web:sha-${{ github.sha }}
+
+      - name: Update Kubernetes manifest
+        run: |
+          sed -i "s|image: .*simple-web.*|image: ghcr.io/yujajja/simple-web:sha-${GITHUB_SHA}|g" deployment.yaml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add deployment.yaml
+          git diff --cached --quiet || git commit -m "Update image to sha-${GITHUB_SHA}"
+          git push
