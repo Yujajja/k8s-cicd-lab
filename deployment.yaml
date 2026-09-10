@@ -19,6 +19,6 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: simple-web:v1
+          image: ghcr.io/yujajja/simple-web:sha-53308c787de46ccbb169fe48abeaa6afb8954627
           ports:
             - containerPort: 80
