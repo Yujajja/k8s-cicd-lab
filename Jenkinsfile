@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         IMAGE_REPO = 'ghcr.io/yujajja/simple-web'
-        SKIP_PIPELINE = 'false'
     }
 
     stages {
