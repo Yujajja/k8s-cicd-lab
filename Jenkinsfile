@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         IMAGE_REPO = 'ghcr.io/yujajja/simple-web'
+        SKIP_PIPELINE = 'false'
     }
 
     stages {
@@ -13,7 +14,34 @@ pipeline {
             }
         }
 
+        stage('Check Skip CI') {
+            steps {
+                script {
+                    def commitMessage = sh(
+                        script: 'git log -1 --pretty=%B',
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Commit message: ${commitMessage}"
+
+                    if (commitMessage.contains('[skip ci]')) {
+                        env.SKIP_PIPELINE = 'true'
+                        echo 'Jenkins bot commit detected. Remaining CI stages will be skipped.'
+                    } else {
+                        env.SKIP_PIPELINE = 'false'
+                        echo 'Normal commit detected. CI pipeline will continue.'
+                    }
+                }
+            }
+        }
+
         stage('Prepare Image Tag') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 script {
                     env.IMAGE_TAG = "sha-${env.GIT_COMMIT}"
@@ -24,6 +52,12 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 sh '''
                     docker build \
@@ -35,6 +69,12 @@ pipeline {
         }
 
         stage('Push Image to GHCR') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 withCredentials([
                     usernamePassword(
@@ -58,6 +98,12 @@ pipeline {
         }
 
         stage('Update Kubernetes Manifest') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 withCredentials([
                     usernamePassword(
